@@ -10,16 +10,23 @@ app = Flask(__name__)
 # Calculate Total Hits
 def hitrecorder():
   val = 1
-  with open('/storage/hitcount.txt', 'a') as f:
+  if 'TEST_ENV' in os.environ.keys() and os.environ['TEST_ENV'] == 'True' :
+    perm_store = 'storage/hitcount.txt'
+  else :
+    perm_store = '/storage/hitcount.txt'
+  with open(perm_store, 'a') as f:
     f.write(str(datetime.now())+"\n")
-  with open('/storage/hitcount.txt', 'r') as f:
+  with open(perm_store, 'r') as f:
     val = len(f.read().split("\n"))
   return ( val - 1)
 
 # Handles Authentication & Authorization
 def authmod(usernm, passwd):
   authcfg = configparser.ConfigParser()
-  authcfg.read('/config/auth.property')
+  if 'TEST_ENV' in os.environ.keys() and os.environ['TEST_ENV'] == 'True' :
+    authcfg.read('config/auth.property')
+  else :
+    authcfg.read('/config/auth.property')
   try :
     return ( authcfg['USER'][usernm] == passwd )
   except KeyError :
