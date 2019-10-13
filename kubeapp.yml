@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mytimeappdeployment
+spec:
+  selector:
+    matchLabels:
+      app: mytimeapp
+  replicas: 1 
+  template:
+    metadata:
+      labels:
+        app: mytimeapp
+    spec:
+      containers:
+      - name: mytimeapp
+        image: docker.io/sanmuk21/mytimeservice:3.0
+        env:
+        - name: MY_TIMEZONE
+          value: 'America/Los_Angeles'
+        ports:
+        - containerPort: 8080
+        volumeMounts:
+        -   name: mytimeappvol
+            mountPath: /storage
+        -   name: mytimeappsecret
+            mountPath: /config
+      volumes:
+      -   name: mytimeappvol
+          persistentVolumeClaim:
+            claimName: mytimevolume-claim
+      -   name: mytimeappsecret
+          secret:
+            secretName: auth.property
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mytimeservice
+spec:
+  selector:
+    app: mytimeapp
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+  type: NodePort
+
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: mytimeingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+  - host: mytimeservice.com
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: mytimeservice
+          servicePort: 8080
